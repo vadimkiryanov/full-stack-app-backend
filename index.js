@@ -1,11 +1,12 @@
 import express from "express";
-import jwt from "jsonwebtoken";
-import bcrypt from "bcrypt";
+import multer from "multer";
+
 import mongoose from "mongoose";
-import {registerValidation} from "./validations/auth.js"; // необходимо всегда указывать расширение
-import {validationResult} from "express-validator"; // Проверяет есть ли ошибки в передаваемых данных формы
-import UserModel from "./models/User.js";
+import {registerValidation, loginValidation, postCreateValidation} from "./validations.js"; // необходимо всегда указывать расширение
 import checkAuth from "./utils/checkAuth.js";
+import * as UserController from "./controllers/UserController.js";
+import * as PostController from "./controllers/PostController.js";
+import handleValidationErrors from "./utils/handleValidationErrors.js";
 
 mongoose.set("strictQuery", false);
 
@@ -21,119 +22,44 @@ mongoose
 // Использованиие express
 const app = express();
 
+// Создание хранилища
+const storage = multer.diskStorage({
+  // cb - callback
+  destination: (_, __, cb) => {
+    cb(null, "uploads"); // null - не получает никаких ошибок, 'uploads' - сохранять в папку такую
+  },
+  filename: (_, file, cb) => {
+    cb(null, file.originalname); // file.originalname - вытаскиваю оригинальное название файла
+  },
+});
+
+// Применение логики хранилища на express
+const upload = multer({storage});
+
 // Позволяет express читать json формат
 app.use(express.json());
 
-// Залогиниться
-app.post("/auth/login", async (req, res) => {
-  try {
-    const user = await UserModel.findOne({email: req.body.email});
+// Позволяет открывать картинки по роуту
+app.use("/uploads", express.static("uploads"));
 
-    // Это пишется только для разработчиков, дабы не наделать дыр в безопасности
-    if (!user) {
-      return res.status(404).json({
-        message: "Пользователь не найден",
-      });
-    }
+// routes
+// auth
+app.post("/auth/login", loginValidation, handleValidationErrors, UserController.login);
+app.post("/auth/register", registerValidation, handleValidationErrors, UserController.register);
+app.get("/auth/me", checkAuth, UserController.getMe);
 
-    const isValidPassword = await bcrypt.compare(req.body.password, user._doc.passwordHash); // Сравнение паролей req.body.password и user._doc.passwordHash
-    if (!isValidPassword) {
-      return res.status(400).json({
-        message: "Неверный логин или пароль",
-      });
-    }
-
-    // Создание нового токена с обновленными данными
-    const token = jwt.sign(
-      {
-        _id: user._id, // Шифрование _id при помощи JWT
-      },
-      "secret123", // Ключ шифрования
-      {
-        expiresIn: "30d", // Время жизни токена (30 дней)
-      }
-    );
-
-    // Снова вытаскиваем все данные кроме passwordHash
-    const {passwordHash, ...userData} = user._doc; // Достаем отдельно все данные в качестве объекта userData кроме passwordHash
-
-    // Отправка ответа
-    res.json({
-      ...userData, //
-      token,
-      message: "Вы успешно авторизовались",
-    });
-  } catch (err) {
-    console.log(err); // Храним для разработчика
-
-    // Передаем информацию пользователю
-    res.status(500).json({
-      message: "Не удалось авторизоваться",
-    });
-  }
-});
-
-// Зарегистрироваться
-// post запрос по адресу "/auth/register"
-// if (registerValidation) то (req, res) => {...}
-app.post("/auth/register", registerValidation, async (req, res) => {
-  try {
-    const errors = validationResult(req); // Получение всех ошибок при помощи библиотеки validationResult
-    // Если ошибки не пустые
-    if (!errors.isEmpty()) {
-      return res.status(400).json(errors.array()); // Возврашение статуса 400 и всех ошибок
-    }
-
-    // Создание шифрованного пароля
-    const password = req.body.password; // Получения пароля от пользователя
-    const salt = await bcrypt.genSalt(10); // Генерация шифрования пароля по переданной длине
-    const passHash = await bcrypt.hash(password, salt); // 1 - сам пароль, 2 - алгоритм шифрования
-
-    const doc = new UserModel({
-      email: req.body.email,
-      fullName: req.body.fullName,
-      avatarUrl: req.body.avatarUrl,
-      passwordHash: passHash,
-    });
-
-    // Создание пользователя
-    const user = await doc.save(); // Передача форматированных данных в константу
-
-    const token = jwt.sign(
-      {
-        _id: user._id, // Шифрование _id при помощи JWT
-      },
-      "secret123", // Ключ шифрования
-      {
-        expiresIn: "30d", // Время жизни токена (30 дней)
-      }
-    );
-
-    const {passwordHash, ...userData} = user._doc; // Достаем отдельно все данные в качестве объекта userData кроме passwordHash
-
-    // Отправка ответа
-    res.json({
-      ...userData,
-      token,
-    });
-  } catch (err) {
-    console.log(err); // Храним для разработчика
-
-    // Передаем информацию пользователю
-    res.status(500).json({
-      message: "Не удалось зарегистрироваться",
-    });
-  }
-});
-
-// Получение данных после авторизации
-app.get("/auth/me", checkAuth, (req, res) => {
+app.post("/upload", checkAuth, upload.single("image"), (req, res) => {
   res.json({
-    succes: true,
+    url: `/uploads/${req.file.originalname}`, // ссылка на картинку
   });
-  try {
-  } catch (err) {}
-});
+}); // upload.single('image') - ожидание файла с свойством image
+
+// posts
+app.get("/posts", PostController.getAll); // Получение всех статей
+app.get("/posts/:id", PostController.getOne); // Получение 1 статьи
+app.post("/posts", checkAuth, postCreateValidation, handleValidationErrors, PostController.create); // Создание статьи
+app.delete("/posts/:id", checkAuth, PostController.remove); // Удаление статьи
+app.patch("/posts/:id", checkAuth, postCreateValidation, handleValidationErrors, PostController.update); // Обновление статьи
 
 // Присваиваем серверу порт и действие при ошибке
 app.listen(4444, (error) => {
