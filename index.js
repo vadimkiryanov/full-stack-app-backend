@@ -1,23 +1,23 @@
-import express from "express";
-import multer from "multer";
+import express from 'express';
+import multer from 'multer';
 
-import mongoose from "mongoose";
-import {registerValidation, loginValidation, postCreateValidation} from "./validations.js"; // необходимо всегда указывать расширение
-import checkAuth from "./utils/checkAuth.js";
-import * as UserController from "./controllers/UserController.js";
-import * as PostController from "./controllers/PostController.js";
-import handleValidationErrors from "./utils/handleValidationErrors.js";
+import mongoose from 'mongoose';
+import { registerValidation, loginValidation, postCreateValidation } from './validations.js'; // необходимо всегда указывать расширение
 
-mongoose.set("strictQuery", false);
+import { UserController, PostController } from './controllers/index.js';
+
+import { handleValidationErrors, checkAuth } from './utils/index.js';
+
+mongoose.set('strictQuery', false);
 
 // Подключение к MongoDB
 mongoose
   // Ссылка подключения с паролем | blog - для подключения к определенной ячейке бд
-  .connect("mongodb+srv://admin:qqqqq0@cluster0.cjgokvy.mongodb.net/blog?retryWrites=true&w=majority")
+  .connect('mongodb+srv://admin:qqqqq0@cluster0.cjgokvy.mongodb.net/blog?retryWrites=true&w=majority')
   .then(() => {
-    console.log("DB OK");
+    console.log('DB OK');
   })
-  .catch((error) => console.log("DB error", error));
+  .catch((error) => console.log('DB error', error));
 
 // Использованиие express
 const app = express();
@@ -26,7 +26,7 @@ const app = express();
 const storage = multer.diskStorage({
   // cb - callback
   destination: (_, __, cb) => {
-    cb(null, "uploads"); // null - не получает никаких ошибок, 'uploads' - сохранять в папку такую
+    cb(null, 'uploads'); // null - не получает никаких ошибок, 'uploads' - сохранять в папку такую
   },
   filename: (_, file, cb) => {
     cb(null, file.originalname); // file.originalname - вытаскиваю оригинальное название файла
@@ -34,32 +34,32 @@ const storage = multer.diskStorage({
 });
 
 // Применение логики хранилища на express
-const upload = multer({storage});
+const upload = multer({ storage });
 
 // Позволяет express читать json формат
 app.use(express.json());
 
 // Позволяет открывать картинки по роуту
-app.use("/uploads", express.static("uploads"));
+app.use('/uploads', express.static('uploads'));
 
 // routes
 // auth
-app.post("/auth/login", loginValidation, handleValidationErrors, UserController.login);
-app.post("/auth/register", registerValidation, handleValidationErrors, UserController.register);
-app.get("/auth/me", checkAuth, UserController.getMe);
+app.post('/auth/login', loginValidation, handleValidationErrors, UserController.login);
+app.post('/auth/register', registerValidation, handleValidationErrors, UserController.register);
+app.get('/auth/me', checkAuth, UserController.getMe);
 
-app.post("/upload", checkAuth, upload.single("image"), (req, res) => {
+app.post('/upload', checkAuth, upload.single('image'), (req, res) => {
   res.json({
     url: `/uploads/${req.file.originalname}`, // ссылка на картинку
   });
 }); // upload.single('image') - ожидание файла с свойством image
 
 // posts
-app.get("/posts", PostController.getAll); // Получение всех статей
-app.get("/posts/:id", PostController.getOne); // Получение 1 статьи
-app.post("/posts", checkAuth, postCreateValidation, handleValidationErrors, PostController.create); // Создание статьи
-app.delete("/posts/:id", checkAuth, PostController.remove); // Удаление статьи
-app.patch("/posts/:id", checkAuth, postCreateValidation, handleValidationErrors, PostController.update); // Обновление статьи
+app.get('/posts', PostController.getAll); // Получение всех статей
+app.get('/posts/:id', PostController.getOne); // Получение 1 статьи
+app.post('/posts', checkAuth, postCreateValidation, handleValidationErrors, PostController.create); // Создание статьи
+app.delete('/posts/:id', checkAuth, PostController.remove); // Удаление статьи
+app.patch('/posts/:id', checkAuth, postCreateValidation, handleValidationErrors, PostController.update); // Обновление статьи
 
 // Присваиваем серверу порт и действие при ошибке
 app.listen(4444, (error) => {
@@ -67,5 +67,5 @@ app.listen(4444, (error) => {
     return console.log(error);
   }
 
-  console.log("Server OK");
+  console.log('Server OK');
 });
