@@ -1,5 +1,25 @@
 import PostModel from '../models/Post.js';
 
+// Получение последних тегов
+export const getLastTags = async (req, res) => {
+  try {
+    const posts = await PostModel.find().limit(5).exec(); // .limit(5).exec() - доступ к 5 добавленным тегам
+
+    const tags = posts
+      .map((obj) => obj.tags)
+      .flat() // Убирает вложенность, всплывая на самый верхний уровень
+      .slice(0, 5); // Первые 5 элементов
+
+    res.json(tags);
+  } catch (err) {
+    console.log(err);
+
+    res.status(500).json({
+      message: 'Не удалось получить теги',
+    });
+  }
+};
+
 // Получение всех статей
 export const getAll = async (req, res) => {
   try {

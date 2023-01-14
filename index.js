@@ -63,6 +63,9 @@ app.post('/posts', checkAuth, postCreateValidation, handleValidationErrors, Post
 app.delete('/posts/:id', checkAuth, PostController.remove); // Удаление статьи
 app.patch('/posts/:id', checkAuth, postCreateValidation, handleValidationErrors, PostController.update); // Обновление статьи
 
+// tags
+app.get('/tags', PostController.getLastTags); // Получение последних тегов
+
 // Присваиваем серверу порт и действие при ошибке
 app.listen(4444, (error) => {
   if (error) {
