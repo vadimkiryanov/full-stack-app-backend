@@ -1,5 +1,6 @@
-import express from 'express';
-import multer from 'multer';
+import express from 'express'; // Для автоматического обновления сервера
+import multer from 'multer'; // Для загрузки файлов
+import cors from 'cors'; // Для отключения защиты запросов на сервер с других доменов
 
 import mongoose from 'mongoose';
 import { registerValidation, loginValidation, postCreateValidation } from './validations.js'; // необходимо всегда указывать расширение
@@ -38,7 +39,8 @@ const upload = multer({ storage });
 
 // Позволяет express читать json формат
 app.use(express.json());
-
+// Отключение защиты запросов
+app.use(cors());
 // Позволяет открывать картинки по роуту
 app.use('/uploads', express.static('uploads'));
 

@@ -1,16 +1,16 @@
-import PostModel from "../models/Post.js";
+import PostModel from '../models/Post.js';
 
 // Получение всех статей
 export const getAll = async (req, res) => {
   try {
-    const posts = await PostModel.find().populate("user").exec(); // .populate("user").exec() - доступ к информации о user`e
+    const posts = await PostModel.find().populate('user').exec(); // .populate("user").exec() - доступ к информации о user`e
 
     res.json(posts);
   } catch (err) {
     console.log(err);
 
     res.status(500).json({
-      message: "Не удалось получить статьи",
+      message: 'Не удалось получить статьи',
     });
   }
 };
@@ -26,25 +26,25 @@ export const getOne = async (req, res) => {
       },
       // Находим то, что хотим обновить:
       {
-        $inc: {viewsCount: 1},
+        $inc: { viewsCount: 1 },
       },
       // Вернуть обновленный результат
       {
-        returnDocument: "after", // Обновить после всех действий выше
+        returnDocument: 'after', // Обновить после всех действий выше
       },
       // Выполняемая функция
       (err, doc) => {
         if (err) {
           console.log(err);
           return res.status(500).json({
-            message: "Не удалось вернуть статью",
+            message: 'Не удалось вернуть статью',
           });
         }
 
         // Если документа нет
         if (!doc) {
           return res.status(404).json({
-            message: "Статья не найдена ",
+            message: 'Статья не найдена ',
           });
         }
 
@@ -54,12 +54,12 @@ export const getOne = async (req, res) => {
   } catch (err) {
     console.log(err);
     res.status(500).json({
-      message: "Не удалось получить статьи",
+      message: 'Не удалось получить статьи',
     });
   }
 };
 
-// Получение одной статьи
+// Обновление статьи
 export const update = async (req, res) => {
   try {
     const postId = req.params.id; // Достаем динамический ID статьи
@@ -79,12 +79,12 @@ export const update = async (req, res) => {
 
     res.json({
       success: true,
-      message: "Статья успешно обновлена",
+      message: 'Статья успешно обновлена',
     });
   } catch (err) {
     console.log(err);
     res.status(500).json({
-      message: "Не удалось обновить статью",
+      message: 'Не удалось обновить статью',
     });
   }
 };
@@ -101,26 +101,26 @@ export const remove = async (req, res) => {
         if (err) {
           console.log(err);
           return res.status(500).json({
-            message: "Не удалось удалить статью",
+            message: 'Не удалось удалить статью',
           });
         }
 
         if (!doc) {
           return res.status(404).json({
-            message: "Статья не найдена",
+            message: 'Статья не найдена',
           });
         }
 
         res.json({
           success: true,
-          message: "Страница успешно удалена",
+          message: 'Страница успешно удалена',
         });
       }
     );
   } catch (err) {
     console.log(err);
     res.status(500).json({
-      message: "Не удалось получить статьи",
+      message: 'Не удалось получить статьи',
     });
   }
 };
@@ -146,7 +146,7 @@ export const create = async (req, res) => {
     console.log(err);
 
     res.status(500).json({
-      message: "Не удалось создать статью",
+      message: 'Не удалось создать статью',
     });
   }
 };
