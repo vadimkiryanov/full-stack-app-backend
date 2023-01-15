@@ -93,7 +93,7 @@ export const update = async (req, res) => {
         text: req.body.text,
         imageUrl: req.body.imageUrl,
         user: req.userId,
-        tags: req.body.tags,
+        tags: req.body.tags.replace(/ /g, '').split(','), // Убираем все лишние пробелмы и превращение строк в массив,
       }
     );
 
@@ -152,7 +152,7 @@ export const create = async (req, res) => {
     const doc = new PostModel({
       title: req.body.title,
       text: req.body.text,
-      tags: req.body.tags,
+      tags: req.body.tags.replace(/ /g, '').split(','), // Убираем все лишние пробелмы и превращение строк в массив
       imageUrl: req.body.imageUrl,
       user: req.userId,
     });
