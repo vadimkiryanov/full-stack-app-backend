@@ -70,7 +70,7 @@ export const getOne = async (req, res) => {
 
         res.json(doc);
       }
-    );
+    ).populate('user'); // populate('user') - передать всю информацию о пользователе
   } catch (err) {
     console.log(err);
     res.status(500).json({
