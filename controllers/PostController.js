@@ -3,7 +3,9 @@ import PostModel from '../models/Post.js';
 // Получение последних тегов
 export const getLastTags = async (req, res) => {
   try {
-    const posts = await PostModel.find().limit(5).exec(); // .limit(5).exec() - доступ к 5 добавленным тегам
+    // .limit(5).exec() - доступ к 5 добавленным тегам
+    // .sort({ createdAt: -1 }) - получение 5 постов с конца
+    const posts = await PostModel.find().sort({ createdAt: -1 }).limit(5).exec();
 
     const tags = posts
       .map((obj) => obj.tags)
